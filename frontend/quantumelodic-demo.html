@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantumelodic MetaSystem - Live Demonstration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Cosmic background */
+        .cosmos {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0a 100%);
+            z-index: -2;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Planetary orbits visualization */
+        .orbit-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .orbit {
+            position: absolute;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .planet-orbit {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Main content */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #FFD700, #FF69B4, #00CED1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: cosmic-shift 5s ease-in-out infinite;
+        }
+
+        @keyframes cosmic-shift {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(30deg); }
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            opacity: 0.9;
+            margin-bottom: 30px;
+            color: #FFD700;
+        }
+
+        /* Demo sections */
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .demo-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+            animation: pulse-glow 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1); opacity: 1; }
+        }
+
+        .demo-card-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Frequency visualization */
+        .frequency-viz {
+            height: 200px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .frequency-bar {
+            position: absolute;
+            bottom: 0;
+            width: 30px;
+            background: linear-gradient(to top, #FFD700, #FF69B4);
+            border-radius: 5px 5px 0 0;
+            transition: height 0.3s ease;
+        }
+
+        /* Musical notation display */
+        .notation-display {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .planet-freq-card {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            margin: 5px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .planet-freq-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #FFD700;
+            transform: translateY(-5px);
+        }
+
+        .planet-freq-card.playing {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: #FFD700;
+            animation: freq-pulse 1s infinite;
+        }
+
+        @keyframes freq-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Controls */
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .control-btn {
+            padding: 12px 30px;
+            margin: 5px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border: none;
+            border-radius: 25px;
+            color: #0a0a0a;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .control-btn:active {
+            transform: scale(0.98);
+        }
+
+        .control-btn.secondary {
+            background: linear-gradient(45deg, #00CED1, #4682B4);
+            color: white;
+        }
+
+        /* Musical DNA display */
+        .musical-dna {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+        }
+
+        .dna-code {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            color: #FFD700;
+            margin: 10px 0;
+            letter-spacing: 2px;
+        }
+
+        /* Harmonic visualization */
+        .harmonic-web {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .harmonic-node {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .harmonic-line {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.2);
+            height: 1px;
+            transform-origin: left center;
+        }
+
+        /* Performance instructions */
+        .performance-section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .instruction-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid #FFD700;
+        }
+
+        /* Volume control */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 15px;
+        }
+
+        .volume-slider {
+            width: 200px;
+            accent-color: #FFD700;
+        }
+
+        /* Status display */
+        .status {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+
+        .status.active {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid #FFD700;
+        }
+
+        @media (max-width: 768px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cosmos"></div>
+    <div class="stars" id="stars"></div>
+    
+    <!-- Planetary orbit visualization -->
+    <div class="orbit-container" id="orbitContainer"></div>
+    
+    <div class="container">
+        <header>
+            <h1>Quantumelodic MetaSystem</h1>
+            <p class="subtitle">Live Demonstration - April 24, 1985, 7:55 PM, New York City</p>
+        </header>
+
+        <div class="musical-dna">
+            <h3>Your Unique Musical DNA</h3>
+            <div class="dna-code">QM-Su26163Mo29366Me32963-a7b4c9d2</div>
+            <p>This cosmic signature is uniquely yours</p>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" onclick="playFullSymphony()">🎵 Play Full Symphony</button>
+            <button class="control-btn secondary" onclick="playPlanetaryTheme()">🌟 Planetary Theme</button>
+            <button class="control-btn secondary" onclick="playHarmonicProgression()">🎼 Harmonic Progression</button>
+            <button class="control-btn secondary" onclick="stopAll()">⏹️ Stop All</button>
+        </div>
+
+        <div class="volume-control">
+            <label>Volume:</label>
+            <input type="range" id="volume" class="volume-slider" min="0" max="100" value="30">
+            <span id="volumeDisplay">30%</span>
+        </div>
+
+        <div class="status" id="status">
+            🌟 Ready to play your cosmic symphony
+        </div>
+
+        <div class="demo-grid">
+            <div class="demo-card">
+                <div class="demo-card-content">
+                    <h2>Planetary Frequencies</h2>
+                    <p style="margin-bottom: 15px;">Each planet resonates at a unique frequency based on its position in your chart</p>
+                    
+                    <div id="planetaryFrequencies">
+                        <!-- Planetary frequency cards will be generated here -->
+                    </div>
+                    
+                    <div class="frequency-viz" id="frequencyViz">
+                        <!-- Frequency visualization bars -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="demo-card">
+                <div class="demo-card-content">
+                    <h2>Harmonic Relationships</h2>
+                    <p style="margin-bottom: 15px;">Aspects create musical intervals and harmonies</p>
+                    
+                    <div class="harmonic-web" id="harmonicWeb">
+                        <!-- Harmonic relationship visualization -->
+                    </div>
+                    
+                    <div class="notation-display">
+                        <strong>Active Harmonics:</strong><br>
+                        Sun-Mars Conjunction: Unison (1:1)<br>
+                        Moon-Mercury Sextile: Major 6th (5:3)<br>
+                        Venus-Jupiter Square: Minor 2nd (16:15)<br>
+                        Saturn-Pluto Conjunction: Deep Unison
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="performance-section">
+            <h2>Performance Instructions</h2>
+            <div class="instruction-item">
+                <strong>Form:</strong> Sonata Form in Lydian Mode
+            </div>
+            <div class="instruction-item">
+                <strong>Tempo:</strong> Andante (95 BPM) - The balanced flow of Earth and Air
+            </div>
+            <div class="instruction-item">
+                <strong>Character:</strong> Grounded yet communicative, with bursts of creative fire
+            </div>
+            <div class="instruction-item">
+                <strong>Dynamics:</strong> mp-mf with occasional f passages during Mars-Sun conjunction
+            </div>
+            <div class="instruction-item">
+                <strong>Key Sections:</strong>
+                <ol style="margin-left: 20px; margin-top: 10px;">
+                    <li>Introduction (Houses 1-3): Establishing identity through Mercury-Moon dialogue</li>
+                    <li>Development (Houses 4-6): Building foundation with Saturn's structure</li>
+                    <li>Climax (Houses 7-9): Sun-Mars conjunction creates powerful statement</li>
+                    <li>Resolution (Houses 10-12): Integration through outer planets</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="demo-card" style="grid-column: 1 / -1;">
+            <div class="demo-card-content">
+                <h2>Your Cosmic Composition</h2>
+                <div class="notation-display">
+                    <pre>
+QUANTUMELODIC SYMPHONY - "The Grounded Communicator"
+=====================================================
+
+EXPOSITION (Bars 1-32)
+- Mercury in Aries (329.63 Hz): Quick ascending arpeggios in D Mixolydian
+- Moon in Gemini (293.66 Hz): Flowing countermelody, emotional undercurrent
+- Harmonic: Major 6th interval creating subtle dialogue
+
+DEVELOPMENT (Bars 33-64)
+- Venus in Aries (349.23 Hz): Passionate string section enters
+- Jupiter in Aquarius (440.00 Hz): Expansive brass responds
+- Tension: Square aspect creates harmonic friction (Minor 2nd)
+
+CLIMAX (Bars 65-96)
+- Sun-Mars Conjunction in Taurus: Powerful unison at 261.63 Hz
+- Full orchestra in Earth-grounded Lydian mode
+- Tempo slightly relaxes to honor Taurus energy
+
+RESOLUTION (Bars 97-128)
+- Saturn-Pluto in Scorpio: Deep bass foundation
+- Neptune in Capricorn: Ethereal overtones
+- Return to opening Mercury theme, now transformed
+
+CODA (Bars 129-144)
+- All planetary frequencies in harmony
+- Fade on suspended chord suggesting infinite continuation
+                    </pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio context and sound generation
+        let audioContext;
+        let oscillators = new Map();
+        let gainNodes = new Map();
+        let masterGain;
+
+        // Planetary data for this specific chart
+        const planetaryData = {
+            'Sun': { frequency: 261.63, sign: 'Taurus', color: '#FFD700', x: 200, y: 150 },
+            'Moon': { frequency: 293.66, sign: 'Gemini', color: '#C0C0C0', x: 400, y: 100 },
+            'Mercury': { frequency: 329.63, sign: 'Aries', color: '#FF8C00', x: 350, y: 200 },
+            'Venus': { frequency: 349.23, sign: 'Aries', color: '#FF69B4', x: 150, y: 250 },
+            'Mars': { frequency: 392.00, sign: 'Taurus', color: '#DC143C', x: 250, y: 180 },
+            'Jupiter': { frequency: 440.00, sign: 'Aquarius', color: '#4B0082', x: 450, y: 250 },
+            'Saturn': { frequency: 493.88, sign: 'Scorpio', color: '#2F4F4F', x: 100, y: 150 },
+            'Uranus': { frequency: 523.25, sign: 'Sagittarius', color: '#00CED1', x: 300, y: 50 },
+            'Neptune': { frequency: 587.33, sign: 'Capricorn', color: '#4682B4', x: 500, y: 180 },
+            'Pluto': { frequency: 659.25, sign: 'Scorpio', color: '#8B0000', x: 50, y: 100 }
+        };
+
+        // Initialize audio context
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioContext.createGain();
+                masterGain.connect(audioContext.destination);
+                masterGain.gain.value = 0.3;
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        // Create visual elements
+        function initializeVisualizations() {
+            // Create stars
+            createStars();
+            
+            // Create planetary orbits
+            createOrbits();
+            
+            // Create planetary frequency cards
+            createPlanetaryCards();
+            
+            // Create frequency visualization
+            createFrequencyBars();
+            
+            // Create harmonic web
+            createHarmonicWeb();
+        }
+
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.opacity = Math.random() * 0.8 + 0.2;
+                starsContainer.appendChild(star);
+            }
+        }
+
+        function createOrbits() {
+            const container = document.getElementById('orbitContainer');
+            const planets = Object.keys(planetaryData);
+            
+            planets.forEach((planet, index) => {
+                const orbitSize = 100 + (index * 50);
+                const orbit = document.createElement('div');
+                orbit.className = 'orbit';
+                orbit.style.width = orbitSize + 'px';
+                orbit.style.height = orbitSize + 'px';
+                
+                const planetDot = document.createElement('div');
+                planetDot.className = 'planet-orbit';
+                planetDot.style.background = planetaryData[planet].color;
+                planetDot.style.right = '0';
+                planetDot.style.animation = `orbit-${index} ${20 + index * 5}s linear infinite`;
+                
+                orbit.appendChild(planetDot);
+                container.appendChild(orbit);
+            });
+            
+            // Add orbit animations
+            const style = document.createElement('style');
+            planets.forEach((planet, index) => {
+                style.textContent += `
+                    @keyframes orbit-${index} {
+                        from { transform: translateY(-50%) rotate(0deg) translateX(${50 + index * 25}px) rotate(0deg); }
+                        to { transform: translateY(-50%) rotate(360deg) translateX(${50 + index * 25}px) rotate(-360deg); }
+                    }
+                `;
+            });
+            document.head.appendChild(style);
+        }
+
+        function createPlanetaryCards() {
+            const container = document.getElementById('planetaryFrequencies');
+            
+            Object.entries(planetaryData).forEach(([planet, data]) => {
+                const card = document.createElement('div');
+                card.className = 'planet-freq-card';
+                card.setAttribute('data-planet', planet);
+                card.setAttribute('data-frequency', data.frequency);
+                card.innerHTML = `
+                    <strong style="color: ${data.color}">${planet}</strong><br>
+                    ${data.frequency} Hz<br>
+                    <small>${data.sign}</small>
+                `;
+                card.addEventListener('click', () => togglePlanetFrequency(planet, data.frequency, card));
+                container.appendChild(card);
+            });
+        }
+
+        function createFrequencyBars() {
+            const viz = document.getElementById('frequencyViz');
+            const planets = Object.entries(planetaryData);
+            const maxFreq = Math.max(...planets.map(([_, d]) => d.frequency));
+            
+            planets.forEach(([planet, data], index) => {
+                const bar = document.createElement('div');
+                bar.className = 'frequency-bar';
+                bar.style.left = (index * 35 + 10) + 'px';
+                bar.style.height = (data.frequency / maxFreq * 150) + 'px';
+                bar.style.background = `linear-gradient(to top, ${data.color}, ${data.color}88)`;
+                bar.setAttribute('data-planet', planet);
+                viz.appendChild(bar);
+            });
+        }
+
+        function createHarmonicWeb() {
+            const web = document.getElementById('harmonicWeb');
+            
+            // Create nodes
+            Object.entries(planetaryData).forEach(([planet, data]) => {
+                const node = document.createElement('div');
+                node.className = 'harmonic-node';
+                node.style.left = (data.x / 600 * 100) + '%';
+                node.style.top = (data.y / 300 * 100) + '%';
+                node.style.background = data.color;
+                node.textContent = planet.substring(0, 2);
+                node.setAttribute('data-planet', planet);
+                web.appendChild(node);
+            });
+            
+            // Create connections for aspects
+            const aspects = [
+                { from: 'Sun', to: 'Mars', type: 'conjunction' },
+                { from: 'Moon', to: 'Mercury', type: 'sextile' },
+                { from: 'Venus', to: 'Jupiter', type: 'square' },
+                { from: 'Saturn', to: 'Pluto', type: 'conjunction' }
+            ];
+            
+            aspects.forEach(aspect => {
+                const fromData = planetaryData[aspect.from];
+                const toData = planetaryData[aspect.to];
+                
+                const line = document.createElement('div');
+                line.className = 'harmonic-line';
+                
+                const dx = toData.x - fromData.x;
+                const dy = toData.y - fromData.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                
+                line.style.width = distance + 'px';
+                line.style.left = (fromData.x / 600 * 100) + '%';
+                line.style.top = (fromData.y / 300 * 100) + '%';
+                line.style.transform = `rotate(${angle}deg)`;
+                
+                if (aspect.type === 'square') {
+                    line.style.background = 'rgba(255, 100, 100, 0.3)';
+                } else {
+                    line.style.background = 'rgba(255, 215, 0, 0.3)';
+                }
+                
+                web.appendChild(line);
+            });
+        }
+
+        // Sound generation functions
+        function playFrequency(frequency, type = 'sine') {
+            initAudio();
+            
+            if (oscillators.has(frequency)) {
+                return;
+            }
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(masterGain);
+            
+            oscillators.set(frequency, oscillator);
+            gainNodes.set(frequency, gainNode);
+            
+            oscillator.start();
+        }
+
+        function stopFrequency(frequency) {
+            if (oscillators.has(frequency)) {
+                const oscillator = oscillators.get(frequency);
+                const gainNode = gainNodes.get(frequency);
+                
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1);
+                setTimeout(() => {
+                    oscillator.stop();
+                    oscillators.delete(frequency);
+                    gainNodes.delete(frequency);
+                }, 150);
+            }
+        }
+
+        function togglePlanetFrequency(planet, frequency, card) {
+            if (card.classList.contains('playing')) {
+                stopFrequency(frequency);
+                card.classList.remove('playing');
+                updateStatus(`Stopped ${planet} (${frequency} Hz)`);
+            } else {
+                playFrequency(frequency);
+                card.classList.add('playing');
+                updateStatus(`Playing ${planet} in ${planetaryData[planet].sign} (${frequency} Hz)`);
+            }
+        }
+
+        // Symphony functions
+        function playFullSymphony() {
+            stopAll();
+            updateStatus('🎵 Playing your complete cosmic symphony...');
+            
+            const sequence = [
+                // Introduction - Mercury and Moon dialogue
+                { planets: ['Mercury', 'Moon'], duration: 3000 },
+                // Add Venus
+                { planets: ['Venus'], duration: 2000 },
+                // Sun-Mars conjunction enters
+                { planets: ['Sun', 'Mars'], duration: 3000 },
+                // Full orchestra
+                { planets: ['Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'], duration: 4000 }
+            ];
+            
+            let delay = 0;
+            sequence.forEach((section, index) => {
+                setTimeout(() => {
+                    section.planets.forEach(planet => {
+                        const data = planetaryData[planet];
+                        playFrequency(data.frequency);
+                        const card = document.querySelector(`[data-planet="${planet}"]`);
+                        if (card) card.classList.add('playing');
+                    });
+                    
+                    if (index === sequence.length - 1) {
+                        setTimeout(() => {
+                            updateStatus('✨ Symphony complete. Feel the cosmic resonance...');
+                        }, section.duration);
+                    }
+                }, delay);
+                delay += section.duration;
+            });
+        }
+
+        function playPlanetaryTheme() {
+            stopAll();
+            updateStatus('🌟 Playing planetary theme progression...');
+            
+            const planets = Object.keys(planetaryData);
+            planets.forEach((planet, index) => {
+                setTimeout(() => {
+                    // Stop previous
+                    if (index > 0) {
+                        const prevPlanet = planets[index - 1];
+                        stopFrequency(planetaryData[prevPlanet].frequency);
+                        const prevCard = document.querySelector(`[data-planet="${prevPlanet}"]`);
+                        if (prevCard) prevCard.classList.remove('playing');
+                    }
+                    
+                    // Play current
+                    const data = planetaryData[planet];
+                    playFrequency(data.frequency);
+                    const card = document.querySelector(`[data-planet="${planet}"]`);
+                    if (card) card.classList.add('playing');
+                    
+                    updateStatus(`${planet} in ${data.sign} - ${data.frequency} Hz`);
+                }, index * 800);
+            });
+        }
+
+        function playHarmonicProgression() {
+            stopAll();
+            updateStatus('🎼 Playing harmonic progression...');
+            
+            // Play aspect pairs
+            const aspects = [
+                { planets: ['Sun', 'Mars'], name: 'Conjunction - Unison Power' },
+                { planets: ['Moon', 'Mercury'], name: 'Sextile - Harmonious Communication' },
+                { planets: ['Venus', 'Jupiter'], name: 'Square - Creative Tension' },
+                { planets: ['Saturn', 'Pluto'], name: 'Conjunction - Deep Transformation' }
+            ];
+            
+            aspects.forEach((aspect, index) => {
+                setTimeout(() => {
+                    stopAll();
+                    aspect.planets.forEach(planet => {
+                        const data = planetaryData[planet];
+                        playFrequency(data.frequency);
+                        const card = document.querySelector(`[data-planet="${planet}"]`);
+                        if (card) card.classList.add('playing');
+                    });
+                    updateStatus(`${aspect.name}`);
+                }, index * 2500);
+            });
+        }
+
+        function stopAll() {
+            oscillators.forEach((osc, freq) => stopFrequency(freq));
+            document.querySelectorAll('.planet-freq-card').forEach(card => {
+                card.classList.remove('playing');
+            });
+            updateStatus('🌟 Ready to play your cosmic symphony');
+        }
+
+        function updateStatus(message) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.classList.add('active');
+            setTimeout(() => status.classList.remove('active'), 500);
+        }
+
+        // Volume control
+        document.getElementById('volume').addEventListener('input', (e) => {
+            const volume = e.target.value / 100;
+            document.getElementById('volumeDisplay').textContent = e.target.value + '%';
+            if (masterGain) {
+                masterGain.gain.setValueAtTime(volume * 0.3, audioContext.currentTime);
+            }
+        });
+
+        // Initialize on load
+        window.addEventListener('load', initializeVisualizations);
+    </script>
+</body>
+</html>
