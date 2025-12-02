@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pytz
 from skyfield.api import Star, load, wgs84
@@ -148,51 +148,81 @@ def _dominant_modality(planets: Dict[str, Dict[str, float]]) -> str:
     return max(totals, key=totals.get)
 
 
-def _safe_load_ephemeris():
-    """Load the JPL DE421 ephemeris with a clear error if offline."""
+def _safe_load_ephemeris() -> Optional[object]:
+    """Attempt to load the JPL DE421 ephemeris.
+
+    Returns ``None`` when the ephemeris cannot be fetched so callers can
+    gracefully fall back to placeholder data instead of raising.
+    """
 
     try:
         return load("de421.bsp")
-    except Exception as exc:  # pragma: no cover - defensive guard
-        raise RuntimeError(
-            "Unable to load ephemeris data. Ensure network access or a cached 'de421.bsp' file is available."  # noqa: E501
-        ) from exc
+    except Exception:  # pragma: no cover - defensive guard
+        return None
+
+
+def _placeholder_planets() -> Dict[str, Dict[str, float]]:
+    """Return a placeholder planet map when computation is unavailable."""
+
+    placeholder = {
+        name: {"sign": "Unknown", "degree": 0.0}
+        for name in [
+            "Sun",
+            "Moon",
+            "Mercury",
+            "Venus",
+            "Mars",
+            "Jupiter",
+            "Saturn",
+            "Uranus",
+            "Neptune",
+            "Pluto",
+        ]
+    }
+    placeholder["Ascendant"] = {"sign": "Unknown", "degree": 0.0}
+    return placeholder
 
 
 def compute_natal_chart(inputs: NatalInputs) -> Dict[str, Dict[str, float]]:
     """Compute planet positions and ascendant for the provided inputs."""
 
     ephemeris = _safe_load_ephemeris()
-    ts = load.timescale()
-    timezone = pytz.timezone(inputs.timezone)
-    localized_dt = timezone.localize(inputs.birth_datetime)
-    ts_time = ts.from_datetime(localized_dt.astimezone(pytz.UTC))
-    observer = wgs84.latlon(inputs.latitude, inputs.longitude)
+    if ephemeris is None:
+        return _placeholder_planets()
 
-    bodies = {
-        "Sun": ephemeris["sun"],
-        "Moon": ephemeris["moon"],
-        "Mercury": ephemeris["mercury"],
-        "Venus": ephemeris["venus"],
-        "Mars": ephemeris["mars"],
-        "Jupiter": ephemeris["jupiter barycenter"],
-        "Saturn": ephemeris["saturn barycenter"],
-        "Uranus": ephemeris["uranus barycenter"],
-        "Neptune": ephemeris["neptune barycenter"],
-        "Pluto": ephemeris["pluto barycenter"],
-    }
+    try:
+        ts = load.timescale()
+        timezone = pytz.timezone(inputs.timezone)
+        localized_dt = timezone.localize(inputs.birth_datetime)
+        ts_time = ts.from_datetime(localized_dt.astimezone(pytz.UTC))
+        observer = wgs84.latlon(inputs.latitude, inputs.longitude)
 
-    planets: Dict[str, Dict[str, float]] = {}
-    for name, target in bodies.items():
-        astrometric = observer.at(ts_time).observe(target)
-        ecliptic_lon = astrometric.apparent().ecliptic_latlon()[1].degrees
-        sign, degree = _longitude_to_sign(ecliptic_lon)
-        planets[name] = {"sign": sign, "degree": degree}
+        bodies = {
+            "Sun": ephemeris["sun"],
+            "Moon": ephemeris["moon"],
+            "Mercury": ephemeris["mercury"],
+            "Venus": ephemeris["venus"],
+            "Mars": ephemeris["mars"],
+            "Jupiter": ephemeris["jupiter barycenter"],
+            "Saturn": ephemeris["saturn barycenter"],
+            "Uranus": ephemeris["uranus barycenter"],
+            "Neptune": ephemeris["neptune barycenter"],
+            "Pluto": ephemeris["pluto barycenter"],
+        }
 
-    asc_sign, asc_degree = _best_match_ascendant(observer, ts_time)
-    planets["Ascendant"] = {"sign": asc_sign, "degree": asc_degree}
+        planets: Dict[str, Dict[str, float]] = {}
+        for name, target in bodies.items():
+            astrometric = observer.at(ts_time).observe(target)
+            ecliptic_lon = astrometric.apparent().ecliptic_latlon()[1].degrees
+            sign, degree = _longitude_to_sign(ecliptic_lon)
+            planets[name] = {"sign": sign, "degree": degree}
 
-    return planets
+        asc_sign, asc_degree = _best_match_ascendant(observer, ts_time)
+        planets["Ascendant"] = {"sign": asc_sign, "degree": asc_degree}
+
+        return planets
+    except Exception:  # pragma: no cover - defensive guard
+        return _placeholder_planets()
 
 
 def build_csv_row(planets: Dict[str, Dict[str, float]], inputs: NatalInputs) -> Dict[str, str]:
