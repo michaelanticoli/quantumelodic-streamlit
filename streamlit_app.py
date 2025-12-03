@@ -1,5 +1,14 @@
-import streamlit as st
 import json
+from datetime import datetime
+
+import pandas as pd
+import streamlit as st
+
+from utils.natal_csv_generator import (
+    NatalInputs,
+    build_csv_row,
+    compute_natal_chart,
+)
 
 # Define the AstroEngine class
 class AstroEngine:
@@ -279,6 +288,64 @@ st.set_page_config(
 
 st.title("Quantumelodic MetaSystem")
 st.subheader("Generate musical compositions from astrological data")
+
+st.markdown("---")
+st.header("Natal Chart CSV Builder")
+
+with st.form("natal_csv_form"):
+    col_a, col_b, col_c = st.columns(3)
+    with col_a:
+        full_name = st.text_input("Name", value="Cosmic Explorer")
+        csv_birth_date = st.date_input("Birth Date", key="csv_birth_date")
+        timezone_str = st.text_input("Time Zone (e.g., America/New_York)", value="UTC")
+    with col_b:
+        csv_birth_time = st.time_input("Birth Time", key="csv_birth_time")
+        latitude = st.number_input("Latitude", format="%0.6f", value=0.0)
+        longitude = st.number_input("Longitude", format="%0.6f", value=0.0)
+    with col_c:
+        st.markdown(
+            "Provide the precise birth coordinates and time zone for the most accurate chart."
+        )
+        st.markdown(
+            "The resulting CSV row follows the requested schema and can be downloaded directly."
+        )
+
+    submitted = st.form_submit_button("Generate Natal CSV Row", type="primary")
+
+if submitted:
+    try:
+        birth_dt = datetime.combine(csv_birth_date, csv_birth_time)
+        natal_inputs = NatalInputs(
+            name=full_name,
+            birth_datetime=birth_dt,
+            latitude=latitude,
+            longitude=longitude,
+            timezone=timezone_str,
+        )
+
+        planetary_chart = compute_natal_chart(natal_inputs)
+        csv_row = build_csv_row(planetary_chart, natal_inputs)
+
+        st.success("Natal chart synthesized successfully!")
+        display_df = pd.DataFrame([csv_row])
+        st.dataframe(display_df, use_container_width=True)
+
+        csv_bytes = display_df.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="Download CSV Row",
+            data=csv_bytes,
+            file_name="natal_chart_row.csv",
+            mime="text/csv",
+        )
+
+        with st.expander("Planetary Positions", expanded=False):
+            st.json(planetary_chart)
+
+    except Exception as e:
+        st.error(
+            "Unable to compute the natal chart automatically. Ensure latitude, longitude, time zone, and ephemeris data are available."
+        )
+        st.exception(e)
 
 with st.container():
     st.markdown("## Birth Information")
