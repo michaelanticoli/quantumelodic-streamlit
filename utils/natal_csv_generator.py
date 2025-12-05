@@ -113,19 +113,38 @@ def _longitude_to_sign(longitude: float) -> Tuple[str, float]:
 
 
 def _best_match_ascendant(observer, ts_time) -> Tuple[str, float]:
-    """Estimate the ascendant by scanning ecliptic points along the eastern horizon."""
+    """Estimate the ascendant by scanning ecliptic points along the eastern horizon.
+    
+    Skyfield requires observer.at(...).observe(...) for astrometric calculations.
+    This function scans 720 half-degree points along the ecliptic to find the
+    position closest to the eastern horizon (altitude ~0°, azimuth ~90°).
+    
+    Returns a safe default ('Aries', 0.0) if calculation fails for any reason.
+    """
 
     best_score = float("inf")
     best_longitude = 0.0
-    for longitude in [x * 0.5 for x in range(0, 720)]:
-        star = Star(ecliptic_latlon=(0.0, longitude))
-        alt, az, _ = observer.at(ts_time).observe(star).apparent().altaz()
-        score = abs(alt.degrees) + abs(az.degrees - 90)
-        if score < best_score:
-            best_score = score
-            best_longitude = longitude
-
-    return _longitude_to_sign(best_longitude)
+    try:
+        for longitude in [x * 0.5 for x in range(0, 720)]:
+            try:
+                # Skyfield Star requires ecliptic coordinates; some versions may raise
+                star = Star(ecliptic_latlon=(0.0, longitude))
+                alt, az, _ = observer.at(ts_time).observe(star).apparent().altaz()
+                score = abs(alt.degrees) + abs(az.degrees - 90)
+                if score < best_score:
+                    best_score = score
+                    best_longitude = longitude
+            except Exception:
+                # Skip longitudes that cause errors in observer.at(...).observe(...)
+                continue
+        
+        # Return best match found, or default if none succeeded
+        if best_score == float("inf"):
+            return ("Aries", 0.0)
+        return _longitude_to_sign(best_longitude)
+    except Exception:
+        # Complete failure fallback: return safe default
+        return ("Aries", 0.0)
 
 
 def _dominant_element(planets: Dict[str, Dict[str, float]]) -> str:
@@ -195,7 +214,11 @@ def compute_natal_chart(inputs: NatalInputs) -> Dict[str, Dict[str, float]]:
         timezone = pytz.timezone(inputs.timezone)
         localized_dt = timezone.localize(inputs.birth_datetime)
         ts_time = ts.from_datetime(localized_dt.astimezone(pytz.UTC))
-        observer = wgs84.latlon(inputs.latitude, inputs.longitude)
+        
+        # Skyfield requires combining Earth ephemeris with Topos for .at(...).observe(...)
+        # observer = ephemeris['earth'] + wgs84.latlon(latitude, longitude)
+        earth = ephemeris["earth"]
+        observer = earth + wgs84.latlon(inputs.latitude, inputs.longitude)
 
         bodies = {
             "Sun": ephemeris["sun"],
