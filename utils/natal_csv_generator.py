@@ -125,6 +125,7 @@ def _best_match_ascendant(observer, ts_time) -> Tuple[str, float]:
         for longitude in [x * 0.5 for x in range(0, 720)]:
             try:
                 # Star(ecliptic_latlon=...) may not be supported in all Skyfield versions
+                # We catch broad exceptions here for maximum compatibility across versions
                 star = Star(ecliptic_latlon=(0.0, longitude))
                 alt, az, _ = observer.at(ts_time).observe(star).apparent().altaz()
                 score = abs(alt.degrees) + abs(az.degrees - 90)
@@ -133,6 +134,7 @@ def _best_match_ascendant(observer, ts_time) -> Tuple[str, float]:
                     best_longitude = longitude
             except (AttributeError, TypeError, ValueError):
                 # Skip this longitude if Star construction or observation fails
+                # This handles variations in Skyfield API across versions
                 continue
 
         return _longitude_to_sign(best_longitude)

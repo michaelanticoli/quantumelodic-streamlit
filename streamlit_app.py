@@ -363,6 +363,8 @@ if submitted:
             with st.expander("Planetary Positions", expanded=False):
                 # Convert to JSON-safe format to avoid st.json serialization errors
                 # with non-standard types (e.g., numpy types, datetime, etc.)
+                # The double conversion (dumps->loads) is needed because st.json()
+                # requires a dict/list, not a JSON string
                 try:
                     st.json(json.loads(json.dumps(planetary_chart, default=str)))
                 except Exception:
