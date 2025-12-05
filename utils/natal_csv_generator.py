@@ -216,7 +216,6 @@ def compute_natal_chart(inputs: NatalInputs) -> Dict[str, Dict[str, float]]:
         ts_time = ts.from_datetime(localized_dt.astimezone(pytz.UTC))
         
         # Skyfield requires combining Earth ephemeris with Topos for .at(...).observe(...)
-        # observer = ephemeris['earth'] + wgs84.latlon(latitude, longitude)
         earth = ephemeris["earth"]
         observer = earth + wgs84.latlon(inputs.latitude, inputs.longitude)
 

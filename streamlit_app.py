@@ -339,10 +339,10 @@ if submitted:
         )
 
         with st.expander("Planetary Positions", expanded=False):
-            # Use json.dumps with default=str to handle non-JSON types safely
+            # Use json.dumps with default=str to handle non-JSON types, then display as code
             try:
                 planetary_chart_json = json.dumps(planetary_chart, indent=2, default=str)
-                st.json(planetary_chart_json)
+                st.code(planetary_chart_json, language='json')
             except Exception:
                 # Fallback to st.write if JSON serialization still fails
                 st.write(planetary_chart)
