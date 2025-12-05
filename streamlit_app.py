@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 import pandas as pd
+import pytz
 import streamlit as st
 
 from utils.natal_csv_generator import (
@@ -313,39 +314,65 @@ with st.form("natal_csv_form"):
     submitted = st.form_submit_button("Generate Natal CSV Row", type="primary")
 
 if submitted:
+    # Validate inputs before processing
+    validation_errors = []
+    
+    # Validate latitude (must be between -90 and 90)
+    if not -90 <= latitude <= 90:
+        validation_errors.append(f"Latitude must be between -90 and 90 (got {latitude})")
+    
+    # Validate longitude (must be between -180 and 180)
+    if not -180 <= longitude <= 180:
+        validation_errors.append(f"Longitude must be between -180 and 180 (got {longitude})")
+    
+    # Validate timezone string
     try:
-        birth_dt = datetime.combine(csv_birth_date, csv_birth_time)
-        natal_inputs = NatalInputs(
-            name=full_name,
-            birth_datetime=birth_dt,
-            latitude=latitude,
-            longitude=longitude,
-            timezone=timezone_str,
-        )
+        pytz.timezone(timezone_str)
+    except pytz.UnknownTimeZoneError:
+        validation_errors.append(f"Invalid timezone: '{timezone_str}'. Use standard timezone names like 'UTC', 'America/New_York', etc.")
+    
+    if validation_errors:
+        for error in validation_errors:
+            st.error(error)
+    else:
+        try:
+            birth_dt = datetime.combine(csv_birth_date, csv_birth_time)
+            natal_inputs = NatalInputs(
+                name=full_name,
+                birth_datetime=birth_dt,
+                latitude=latitude,
+                longitude=longitude,
+                timezone=timezone_str,
+            )
 
-        planetary_chart = compute_natal_chart(natal_inputs)
-        csv_row = build_csv_row(planetary_chart, natal_inputs)
+            planetary_chart = compute_natal_chart(natal_inputs)
+            csv_row = build_csv_row(planetary_chart, natal_inputs)
 
-        st.success("Natal chart synthesized successfully!")
-        display_df = pd.DataFrame([csv_row])
-        st.dataframe(display_df, use_container_width=True)
+            st.success("Natal chart synthesized successfully!")
+            display_df = pd.DataFrame([csv_row])
+            st.dataframe(display_df, use_container_width=True)
 
-        csv_bytes = display_df.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            label="Download CSV Row",
-            data=csv_bytes,
-            file_name="natal_chart_row.csv",
-            mime="text/csv",
-        )
+            csv_bytes = display_df.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                label="Download CSV Row",
+                data=csv_bytes,
+                file_name="natal_chart_row.csv",
+                mime="text/csv",
+            )
 
-        with st.expander("Planetary Positions", expanded=False):
-            st.json(planetary_chart)
+            with st.expander("Planetary Positions", expanded=False):
+                # Convert to JSON-safe format to avoid st.json serialization errors
+                # with non-standard types (e.g., numpy types, datetime, etc.)
+                try:
+                    st.json(json.loads(json.dumps(planetary_chart, default=str)))
+                except Exception:
+                    st.write(planetary_chart)
 
-    except Exception as e:
-        st.error(
-            "Unable to compute the natal chart automatically. Ensure latitude, longitude, time zone, and ephemeris data are available."
-        )
-        st.exception(e)
+        except Exception as e:
+            st.error(
+                "Unable to compute the natal chart automatically. Ensure latitude, longitude, time zone, and ephemeris data are available."
+            )
+            st.exception(e)
 
 with st.container():
     st.markdown("## Birth Information")
