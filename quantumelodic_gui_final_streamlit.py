@@ -91,6 +91,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-cd /Users/moontuner/Documents/GitHub/quantumelodic-streamlit
-
